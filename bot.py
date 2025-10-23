@@ -1,25 +1,30 @@
+# bot.py
 import os
 import json
+import re
 import gspread
+import asyncio
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 from google.oauth2.service_account import Credentials
-import re
 
-# Environment variables
+# --- CONFIG ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 SHEET_ID = os.environ.get("SHEET_ID")
 TARGET_CHAT_ID = int(os.environ.get("TARGET_CHAT_ID", 0))
-GOOGLE_CREDS = os.environ.get("GOOGLE_CREDS")
 
-if not BOT_TOKEN or not SHEET_ID or not GOOGLE_CREDS:
-    raise ValueError("BOT_TOKEN, SHEET_ID, or GOOGLE_CREDS is missing!")
+if not BOT_TOKEN or not SHEET_ID:
+    raise ValueError("BOT_TOKEN or SHEET_ID is missing!")
 
-# Google Sheets setup
+# --- Google Sheets setup ---
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-creds = Credentials.from_service_account_info(json.loads(GOOGLE_CREDS), scopes=SCOPES)
-client = gspread.authorize(creds)
+creds_json = os.environ.get("GOOGLE_CREDS")
+if not creds_json:
+    raise ValueError("GOOGLE_CREDS environment variable is missing!")
+
+CREDS = Credentials.from_service_account_info(json.loads(creds_json), scopes=SCOPES)
+client = gspread.authorize(CREDS)
 sheet = client.open_by_key(SHEET_ID).sheet1
 
 header = ["Timestamp", "Symbol", "Timeframe", "Move Type", "Direction", "Price", "Forwarded"]
@@ -37,7 +42,7 @@ pattern = re.compile(
     re.IGNORECASE
 )
 
-# Handlers
+# --- Handlers ---
 async def log_stock_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
@@ -74,21 +79,25 @@ async def log_stock_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         try:
             sheet.append_row(row)
-            print(f"[SUCCESS] Logged stock alert: {row}")
+            print(f"[SUCCESS] Logged: {row}")
         except Exception as e:
-            print(f"[ERROR] Failed to append row: {e}")
+            print(f"[ERROR] Failed to append: {e}")
 
-# Commands
+# --- Commands ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! Stock Alert Bot is running.")
+    await update.message.reply_text("Sheets bot is running...")
 
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.message.chat.id}")
 
-# Build the bot
-def create_bot_app():
+# --- Run Bot ---
+async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("getid", get_chat_id))
     app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, log_stock_message))
-    return app
+    print("🚀 Sheets bot running...")
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())

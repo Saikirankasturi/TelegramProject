@@ -1,21 +1,32 @@
+# forwarder.py
+import asyncio
 import os
 from telethon import TelegramClient, events
 
-async def start_forwarder():
-    bot_token = os.environ.get("BOT_TOKEN")
-    api_id = int(os.environ.get("API_ID"))
-    api_hash = os.environ.get("API_HASH")
-    source_id = int(os.environ.get("SOURCE_GROUP_ID"))
-    dest_id = int(os.environ.get("DEST_GROUP_ID"))
+# --- CONFIG ---
+API_ID = int(os.environ.get("API_ID", 0))
+API_HASH = os.environ.get("API_HASH")
+SOURCE_GROUP_ID = int(os.environ.get("SOURCE_GROUP_ID", 0))
+DEST_GROUP_ID = int(os.environ.get("DEST_GROUP_ID", 0))
 
-    # Login using bot token (no phone required)
-    client = TelegramClient('bot_session', api_id, api_hash).start(bot_token=bot_token)
+if not API_ID or not API_HASH or not SOURCE_GROUP_ID or not DEST_GROUP_ID:
+    raise ValueError("Telethon API_ID, API_HASH or GROUP IDs missing!")
 
-    @client.on(events.NewMessage(chats=source_id))
-    async def forward(event):
-        print(f"[DEBUG] Got message: {event.message.text}")
-        await client.forward_messages(dest_id, event.message, from_peer=source_id)
-        print(f"[SUCCESS] Forwarded message")
+client = TelegramClient("session", API_ID, API_HASH)
 
-    print("Forwarder running...")
+@client.on(events.NewMessage(chats=SOURCE_GROUP_ID))
+async def forward_to_group(event):
+    await client.forward_messages(
+        entity=DEST_GROUP_ID,
+        messages=event.message,
+        from_peer=SOURCE_GROUP_ID
+    )
+    print(f"Forwarded message: {event.message.text}")
+
+async def main():
+    print("🚀 Forwarder running...")
+    await client.start()
     await client.run_until_disconnected()
+
+if __name__ == "__main__":
+    asyncio.run(main())
