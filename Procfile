@@ -1,1 +1,2 @@
-worker: python run_both.py
+bot: python bot.py
+forwarder: python forwarder.py

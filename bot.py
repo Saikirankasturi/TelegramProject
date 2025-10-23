@@ -3,7 +3,6 @@ import os
 import json
 import re
 import gspread
-import asyncio
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
@@ -34,6 +33,7 @@ try:
 except gspread.exceptions.APIError:
     sheet.insert_row(header, index=1)
 
+# --- Regex pattern ---
 pattern = re.compile(
     r'(?P<symbol>\w+)\s*-\s*(?P<timeframe>\w+)\s*'
     r'(?P<move_type>Normal|Bigger)\s*'
@@ -91,13 +91,11 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.message.chat.id}")
 
 # --- Run Bot ---
-async def main():
+if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("getid", get_chat_id))
     app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, log_stock_message))
-    print("🚀 Sheets bot running...")
-    await app.run_polling()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    print("🚀 Sheets bot running...")
+    app.run_polling()

@@ -16,12 +16,15 @@ client = TelegramClient("session", API_ID, API_HASH)
 
 @client.on(events.NewMessage(chats=SOURCE_GROUP_ID))
 async def forward_to_group(event):
-    await client.forward_messages(
-        entity=DEST_GROUP_ID,
-        messages=event.message,
-        from_peer=SOURCE_GROUP_ID
-    )
-    print(f"Forwarded message: {event.message.text}")
+    try:
+        await client.forward_messages(
+            entity=DEST_GROUP_ID,
+            messages=event.message,
+            from_peer=SOURCE_GROUP_ID
+        )
+        print(f"Forwarded message: {event.message.text}")
+    except Exception as e:
+        print(f"[ERROR] Could not forward message: {e}")
 
 async def main():
     print("🚀 Forwarder running...")
