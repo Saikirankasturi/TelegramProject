@@ -1,20 +1,23 @@
 from telethon import TelegramClient, events
-import config  # Import sensitive info
+import os
 
-# --- CLIENT SETUP ---
-client = TelegramClient('session', config.API_ID, config.API_HASH)
+async def start_forwarder():
+    api_id = int(os.environ.get("API_ID"))
+    api_hash = os.environ.get("API_HASH")
+    SOURCE_GROUP_ID = int(os.environ.get("SOURCE_GROUP_ID"))
+    DEST_GROUP_ID = int(os.environ.get("DEST_GROUP_ID"))
 
-# --- EVENT HANDLER ---
-@client.on(events.NewMessage(chats=config.SOURCE_GROUP_ID))
-async def forward_to_group(event):
-    await client.forward_messages(
-        entity=config.DEST_GROUP_ID,
-        messages=event.message,
-        from_peer=config.SOURCE_GROUP_ID
-    )
-    print(f"Forwarded message: {event.message.text}")
+    client = TelegramClient('session', api_id, api_hash)
 
-# --- RUN CLIENT ---
-print("Forwarding script running...")
-client.start()
-client.run_until_disconnected()
+    @client.on(events.NewMessage(chats=SOURCE_GROUP_ID))
+    async def forward_to_group(event):
+        await client.forward_messages(
+            entity=DEST_GROUP_ID,
+            messages=event.message,
+            from_peer=SOURCE_GROUP_ID
+        )
+        print(f"Forwarded message: {event.message.text}")
+
+    await client.start()
+    print("Forwarder running...")
+    await client.run_until_disconnected()

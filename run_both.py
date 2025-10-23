@@ -1,25 +1,23 @@
-# run_both_loop.py
-from multiprocessing import Process
-import subprocess
-import time
+import asyncio
+import os
+import json
+from forwarder import start_forwarder
+from bot import start_bot
 
-def run_forwarder():
-    subprocess.run(["python", "forwarder.py"])
+# --- Make sure environment variables are set ---
+required_env = ["BOT_TOKEN", "GOOGLE_CREDS", "SHEET_ID", "TARGET_CHAT_ID"]
+for var in required_env:
+    if not os.environ.get(var):
+        raise ValueError(f"{var} environment variable is missing!")
 
-def run_bot():
-    subprocess.run(["python", "bot.py"])
+# --- Run both bots concurrently ---
+async def main():
+    # start_forwarder() and start_bot() should be async functions
+    await asyncio.gather(
+        start_forwarder(),
+        start_bot()
+    )
 
 if __name__ == "__main__":
-    while True:
-        print("🔄 Starting bot and forwarder...")
-        p1 = Process(target=run_forwarder)
-        p2 = Process(target=run_bot)
-
-        p1.start()
-        p2.start()
-
-        p1.join()
-        p2.join()
-
-        print("🕐 Waiting 60 seconds before restart...")
-        time.sleep(60)
+    print("🚀 Running both Telegram bots...")
+    asyncio.run(main())
