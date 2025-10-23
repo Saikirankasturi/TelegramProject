@@ -6,13 +6,15 @@ from telethon import TelegramClient, events
 # --- CONFIG ---
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")  # Bot token for Telethon
 SOURCE_GROUP_ID = int(os.environ.get("SOURCE_GROUP_ID", 0))
 DEST_GROUP_ID = int(os.environ.get("DEST_GROUP_ID", 0))
 
-if not API_ID or not API_HASH or not SOURCE_GROUP_ID or not DEST_GROUP_ID:
-    raise ValueError("Telethon API_ID, API_HASH or GROUP IDs missing!")
+if not API_ID or not API_HASH or not BOT_TOKEN or not SOURCE_GROUP_ID or not DEST_GROUP_ID:
+    raise ValueError("Missing Telethon configuration!")
 
-client = TelegramClient("session", API_ID, API_HASH)
+# Use bot token to avoid interactive phone login
+client = TelegramClient("bot_session", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 @client.on(events.NewMessage(chats=SOURCE_GROUP_ID))
 async def forward_to_group(event):
@@ -28,7 +30,7 @@ async def forward_to_group(event):
 
 async def main():
     print("🚀 Forwarder running...")
-    await client.start()
+    # client.start() is not needed, already started with bot_token
     await client.run_until_disconnected()
 
 if __name__ == "__main__":
