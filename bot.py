@@ -6,6 +6,10 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 from google.oauth2.service_account import Credentials
 import re
+import json
+import os
+from google.oauth2.service_account import Credentials
+
 
 # --- CONFIG ---
 try:
@@ -22,7 +26,12 @@ print(f"[DEBUG] TARGET_CHAT_ID={TARGET_CHAT_ID}")
 
 # --- Google Sheets setup ---
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-CREDS = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+
+creds_json = os.environ.get("GOOGLE_CREDS")
+if not creds_json:
+    raise ValueError("GOOGLE_CREDS environment variable is missing!")
+
+CREDS = Credentials.from_service_account_info(json.loads(creds_json), scopes=SCOPES)
 client = gspread.authorize(CREDS)
 sheet = client.open_by_key(SHEET_ID).sheet1
 
