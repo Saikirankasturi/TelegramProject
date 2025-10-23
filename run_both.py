@@ -8,10 +8,12 @@ async def start_bot():
     await app.run_polling()
 
 async def main():
-    await asyncio.gather(
-        start_forwarder(),
-        start_bot()
-    )
+    # Run both bots concurrently
+    bot_task = asyncio.create_task(start_bot())
+    forwarder_task = asyncio.create_task(start_forwarder())
+    
+    # Keep the program running while both tasks are active
+    await asyncio.gather(bot_task, forwarder_task)
 
 if __name__ == "__main__":
     print("🚀 Running both Telegram bots...")
