@@ -1,5 +1,5 @@
-from telethon import TelegramClient, events
 import os
+from telethon import TelegramClient, events
 
 async def start_forwarder():
     api_id = int(os.environ.get("API_ID"))
