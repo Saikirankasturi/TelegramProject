@@ -1,0 +1,15 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore sensitive files
+credentials.json
+config.py
+.env
+
+# Ignore session and log files
+*.log
+session*
+
+# Ignore VS Code workspace settings
+.vscode/
